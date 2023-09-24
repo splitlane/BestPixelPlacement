@@ -462,17 +462,22 @@ public class BestPixelPlacement {
             }
 
             if (cy == -1) {
-                // Edge case: No stable place
+                // Edge case: No stable place // Error: This cannot possibly happen.
+                // OR: Edge case: No "good" place // Can happen
 
-                // Error: This cannot possibly happen.
+                // Feed white pixel to algorithm, and return that but change color
+                Pixel p = calculate(board, PixelColor.WHITE);
+                pixel.x = p.x;
+                pixel.y = p.y;
             } else if (cy == -2) {
                 // Edge case: No columns
 
                 // Error: This cannot possibly happen.
+            } else {
+                pixel.x = cx;
+                pixel.y = cy;
             }
 
-            pixel.x = cx;
-            pixel.y = cy;
         }
 
         return pixel;
@@ -514,7 +519,7 @@ public class BestPixelPlacement {
 //        System.out.println(board);
 
 
-        int nTimes = 3;
+        int nTimes = 10;
         for (int i2 = 0; i2 < nTimes; i2++) {
             PixelColor color = PixelColor.GREEN;
 
