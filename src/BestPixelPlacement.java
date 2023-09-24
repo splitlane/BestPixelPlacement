@@ -300,6 +300,7 @@ public class BestPixelPlacement {
                                             success = true;
                                             break;
                                         }
+                                        p1.color = temp;
                                         // 2-1
                                         temp = p2.color;
                                         p2.color = pixelColor;
@@ -309,6 +310,7 @@ public class BestPixelPlacement {
                                             success = true;
                                             break;
                                         }
+                                        p2.color = temp;
 
                                     }
                                 }
@@ -339,17 +341,19 @@ public class BestPixelPlacement {
                                     p1.color = pixelColor;
                                     if (isPixelStable(board, p2.x, p2.y)) {
                                         // SUCCESS!
-                                        p1.color = temp;
+//                                        p1.color = temp;
                                         success = true;
                                     }
+                                    p1.color = temp;
                                     // 2-1
                                     temp = p2.color;
                                     p2.color = pixelColor;
                                     if (isPixelStable(board, p1.x, p1.y)) {
                                         // SUCCESS!
-                                        p2.color = temp;
+//                                        p2.color = temp;
                                         success = true;
                                     }
+                                    p2.color = temp;
                                 }
 
 //                                int i = lastColorPixeli
@@ -365,17 +369,19 @@ public class BestPixelPlacement {
                                     p1.color = pixelColor;
                                     if (isPixelStable(board, p2.x, p2.y)) {
                                         // SUCCESS!
-                                        p1.color = temp;
+//                                        p1.color = temp;
                                         success = true;
                                     }
+                                    p1.color = temp;
                                     // 2-1
                                     temp = p2.color;
                                     p2.color = pixelColor;
                                     if (isPixelStable(board, p1.x, p1.y)) {
                                         // SUCCESS!
-                                        p2.color = temp;
+//                                        p2.color = temp;
                                         success = true;
                                     }
+                                    p2.color = temp;
                                 }
 
                                 if (success) {
@@ -508,9 +514,16 @@ public class BestPixelPlacement {
 //        System.out.println(board);
 
 
-        Pixel pixel = calculate(board, PixelColor.GREEN);
-        board.board[pixel.y][pixel.x].color = PixelColor.X_TEST;
-        System.out.println(pixel);
-        System.out.println(board);
+        int nTimes = 3;
+        for (int i2 = 0; i2 < nTimes; i2++) {
+            PixelColor color = PixelColor.GREEN;
+
+            Pixel pixel = calculate(board, color);
+            board.board[pixel.y][pixel.x].color = PixelColor.X_TEST;
+            System.out.println(pixel);
+            System.out.println(board);
+            board.board[pixel.y][pixel.x].color = color;
+        }
+
     }
 }
