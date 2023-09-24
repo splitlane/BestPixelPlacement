@@ -1,5 +1,3 @@
-import java.util.Arrays;
-
 public class BestPixelPlacement {
     // Helper for calculate
     public static Pixel getPixel(Board board, int x, int y) {
@@ -8,6 +6,101 @@ public class BestPixelPlacement {
         } else {
             return new Pixel(x, y, PixelColor.NONE);
         }
+    }
+
+    public static Pixel[] getAroundPixels(Board board, int x, int y) {
+        Pixel[] aroundPixels;
+        if (y % 2 == 0) {
+            aroundPixels = new Pixel[]{
+                    getPixel(board, x, y + 1),
+                    getPixel(board, x + 1, y + 1),
+                    getPixel(board, x + 1, y),
+                    getPixel(board, x + 1, y - 1),
+                    getPixel(board, x, y - 1),
+                    getPixel(board, x - 1, y),
+            };
+        } else {
+            aroundPixels = new Pixel[]{
+                    getPixel(board, x - 1, y + 1),
+                    getPixel(board, x, y + 1),
+                    getPixel(board, x + 1, y),
+                    getPixel(board, x, y - 1),
+                    getPixel(board, x - 1, y - 1),
+                    getPixel(board, x - 1, y),
+            };
+        }
+        return aroundPixels;
+    }
+
+    public static boolean isInMosaic(Board board, int x, int y, PixelColor pixelColor) {
+        Pixel[] aroundPixels = getAroundPixels(board, x, y);
+
+        boolean isMosaic = false;
+        PixelColor mosaicStreak = PixelColor.NONE;
+        for (int i = 0; i < aroundPixels.length + 1; i++) {
+            PixelColor color = aroundPixels[i == aroundPixels.length ? 0 : i].color;
+//                        System.out.println(color);
+            if (color == PixelColor.NONE || color == PixelColor.WHITE) {
+                // Reset streak
+                mosaicStreak = PixelColor.NONE;
+            } else if (color == pixelColor) {
+                // Check same color mosaic
+                if (mosaicStreak == pixelColor) {
+                    isMosaic = true;
+                    break;
+                } else {
+                    mosaicStreak = pixelColor;
+                }
+            } else {
+                // Check diff color mosaic
+                if (mosaicStreak != pixelColor && mosaicStreak != PixelColor.NONE && mosaicStreak != color) {
+                    isMosaic = true;
+                    break;
+                } else {
+                    mosaicStreak = color;
+                }
+            }
+        }
+
+        return isMosaic;
+    }
+
+    public static boolean isPixelStable(Board board, int x, int y) {
+        int cx, cy;
+        // The pixel is already stable on one pixel, which is the pixel that it is just above
+        // Other pixel is left (if y % 2 == 1) and right (if y % 2 == 0)
+        if (y % 2 == 0) {
+            // Check right bottom pixel
+            cx = x + 1;
+            cy = y - 1;
+        } else {
+            // Check left bottom pixel
+            cx = x - 1;
+            cy = y - 1;
+        }
+
+        // Check
+        if (cx == -1 || cx == board.sizex || cy == -1 || board.board[cy][cx].color != PixelColor.NONE) {
+            // Stable
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isAroundMosaic(Board board, int x, int y) {
+        Pixel[] aroundPixels = getAroundPixels(board, x, y);
+
+        boolean r = false;
+
+        for (int i = 0; i < aroundPixels.length; i++) {
+            Pixel p = aroundPixels[i];
+            if (isInMosaic(board, p.x, p.y, p.color)) {
+                r = true;
+                break;
+            }
+        }
+        return r;
     }
 
 
@@ -82,21 +175,7 @@ public class BestPixelPlacement {
         for (int x = 0; x < columnsTopY.length; x++) {
             int y = columnsTopY[x];
             if (y != -1) {
-                int cx, cy;
-                // The pixel is already stable on one pixel, which is the pixel that it is just above
-                // Other pixel is left (if y % 2 == 1) and right (if y % 2 == 0)
-                if (y % 2 == 0) {
-                    // Check right bottom pixel
-                    cx = x + 1;
-                    cy = y - 1;
-                } else {
-                    // Check left bottom pixel
-                    cx = x - 1;
-                    cy = y - 1;
-                }
-
-                // Check
-                if (cx == -1 || cx == board.sizex || cy == -1 || board.board[cy][cx].color != PixelColor.NONE) {
+                if (isPixelStable(board, x, y)) {
                     // Stable
                 } else {
                     columnsTopY[x] = -1;
@@ -115,7 +194,7 @@ public class BestPixelPlacement {
         // Now, we have all the possible places where we can place.
 
         // 3: Automatically find best spot
-        boolean useHeightOverride = false;
+        boolean heightOverride = false;
         if (pixelColor != PixelColor.WHITE) {
             // 3b: If color pixel: Go for mosaic
             /*
@@ -123,7 +202,7 @@ public class BestPixelPlacement {
             If found:
             Go to biggest height for mosaic
             else:
-            Go to biggest height (pass on to white only algorithm)
+            Complex future-seeing algorithm
              */
 
             // Find mosaics (2 consecutive around pixel (same or different))
@@ -131,59 +210,7 @@ public class BestPixelPlacement {
             for (int x = 0; x < columnsTopY.length; x++) {
                 int y = columnsTopY[x];
                 if (y != -1) {
-                    Pixel[] aroundPixels;
-                    if (y % 2 == 0) {
-                        aroundPixels = new Pixel[]{
-                            getPixel(board, x, y + 1),
-                            getPixel(board, x + 1, y + 1),
-                            getPixel(board, x + 1, y),
-                            getPixel(board, x + 1, y - 1),
-                            getPixel(board, x, y - 1),
-                            getPixel(board, x - 1, y),
-                        };
-                    } else {
-                        aroundPixels = new Pixel[]{
-                            getPixel(board, x - 1, y + 1),
-                            getPixel(board, x, y + 1),
-                            getPixel(board, x + 1, y),
-                            getPixel(board, x, y - 1),
-                            getPixel(board, x - 1, y - 1),
-                            getPixel(board, x - 1, y),
-                        };
-                    }
-
-                    boolean isMosaic = false;
-                    PixelColor mosaicStreak = PixelColor.NONE;
-                    for (int i = 0; i < aroundPixels.length; i++) {
-                        PixelColor color = aroundPixels[i].color;
-//                        System.out.println(color);
-                        if (color == PixelColor.NONE || color == PixelColor.WHITE) {
-                            // Reset streak
-                            mosaicStreak = PixelColor.NONE;
-                        } else if (color == pixelColor) {
-                            // Check same color mosaic
-                            if (mosaicStreak == pixelColor) {
-                                isMosaic = true;
-                                break;
-                            } else {
-                                mosaicStreak = pixelColor;
-                            }
-                        } else {
-                            // Check diff color mosaic
-                            if (mosaicStreak != pixelColor && mosaicStreak != PixelColor.NONE && mosaicStreak != color) {
-                                isMosaic = true;
-                                break;
-                            } else {
-                                mosaicStreak = color;
-                            }
-                        }
-//                        System.out.println(isMosaic);
-
-                        columnsIsMosaic[x] = isMosaic;
-
-                    }
-//                    System.out.println("");
-
+                    columnsIsMosaic[x] = isInMosaic(board, x, y, pixelColor);
                 }
             }
 
@@ -204,20 +231,227 @@ public class BestPixelPlacement {
                 pixel.x = cx;
                 pixel.y = cy;
             } else {
-                // Else, find highest normal one (pass to white algorithm)
-                useHeightOverride = true;
+                // Check if place doesn't "break" a mosaic
+                for (int x = 0; x < columnsTopY.length; x++) {
+                    int y = columnsTopY[x];
+                    if (y != -1) {
+                        // If there is a mosaic next to the pixel, then it will "break" that mosaic
+                        if (isAroundMosaic(board, x, y)) {
+                            columnsTopY[x] = -1;
+                        }
+                    }
+                }
+
+                // Now, all the "unsafe" spots are gone:
+                // Find "distance" (number of new pixels needed not including the current pixel
+                /*
+                0: Not possible, if this code runs, it should already been found
+                1: One other pixel (not white and (not pixelColor or not color)
+                2: No pixels nearby, but can place 2 to get mosaic
+                3: Do not place here
+                 */
+                int[] distance = new int[columnsTopY.length];
+                boolean[] isMosaicSame = new boolean[columnsTopY.length]; // if mosaic is same color mosaic
+                boolean[] isMosaicDifferent = new boolean[columnsTopY.length]; // if mosaic is same color mosaic
+                for (int x = 0; x < columnsTopY.length; x++) {
+                    int y = columnsTopY[x];
+                    if (y == -1) {
+                        distance[x] = 3;
+                        isMosaicSame[x] = false;
+                        isMosaicDifferent[x] = false;
+                    } else {
+                        Pixel[] aroundPixels = getAroundPixels(board, x, y);
+
+                        int nOfColorPixels = 0;
+                        int lastColorPixeli = -1;
+                        for (int i = 0; i < aroundPixels.length; i++) {
+                            Pixel p = aroundPixels[i];
+                            if (p.color != PixelColor.WHITE && p.color != PixelColor.NONE) {
+                                nOfColorPixels++;
+                                lastColorPixeli = i;
+                            }
+                        }
+                        if (nOfColorPixels < 2) {
+                            boolean[] isPixelViable = new boolean[aroundPixels.length];
+                            for (int i = 0; i < aroundPixels.length; i++) {
+                                Pixel p = aroundPixels[i];
+                                if ((p.color == PixelColor.WHITE || p.color == PixelColor.NONE) && isAroundMosaic(board, p.x, p.y) == false) {
+                                    isPixelViable[i] = true;
+                                }
+                            }
+
+                            if (nOfColorPixels == 0) {
+                                boolean success = false;
+
+                                for (int i = 0; i < aroundPixels.length; i++) {
+                                    int nexti = i == aroundPixels.length - 1 ? 0 : i + 1;
+                                    if (isPixelViable[i] && isPixelViable[nexti]) {
+                                        // Ok, so this pixel and next pixel are both viable
+                                        // Check stability 1-2 and 2-1
+                                        Pixel p1 = aroundPixels[i];
+                                        Pixel p2 = aroundPixels[nexti];
+                                        PixelColor temp;
+                                        // 1-2
+                                        temp = p1.color;
+                                        p1.color = pixelColor;
+                                        if (isPixelStable(board, p2.x, p2.y)) {
+                                            // SUCCESS!
+                                            p1.color = temp;
+                                            success = true;
+                                            break;
+                                        }
+                                        // 2-1
+                                        temp = p2.color;
+                                        p2.color = pixelColor;
+                                        if (isPixelStable(board, p1.x, p1.y)) {
+                                            // SUCCESS!
+                                            p2.color = temp;
+                                            success = true;
+                                            break;
+                                        }
+
+                                    }
+                                }
+
+                                if (success) {
+                                    isMosaicSame[x] = true;
+                                    isMosaicDifferent[x] = true;
+                                    distance[x] = 2;
+                                } else {
+                                    isMosaicSame[x] = false;
+                                    isMosaicDifferent[x] = false;
+                                    distance[x] = 3;
+                                }
+                            } else {
+                                // nOfColorPixels == 1
+                                boolean success = false;
+
+                                int i = lastColorPixeli;
+                                int nexti = i == aroundPixels.length - 1 ? 0 : i + 1;
+                                if (isPixelViable[nexti]) {
+                                    // Ok, so this pixel and next pixel are both viable
+                                    // Check stability 1-2 and 2-1
+                                    Pixel p1 = aroundPixels[i];
+                                    Pixel p2 = aroundPixels[nexti];
+                                    PixelColor temp;
+                                    // 1-2
+                                    temp = p1.color;
+                                    p1.color = pixelColor;
+                                    if (isPixelStable(board, p2.x, p2.y)) {
+                                        // SUCCESS!
+                                        p1.color = temp;
+                                        success = true;
+                                    }
+                                    // 2-1
+                                    temp = p2.color;
+                                    p2.color = pixelColor;
+                                    if (isPixelStable(board, p1.x, p1.y)) {
+                                        // SUCCESS!
+                                        p2.color = temp;
+                                        success = true;
+                                    }
+                                }
+
+//                                int i = lastColorPixeli
+                                int lasti = i == aroundPixels.length - 1 ? 0 : i + 1;
+                                if (isPixelViable[lasti]) {
+                                    // Ok, so this pixel and next pixel are both viable
+                                    // Check stability 1-2 and 2-1
+                                    Pixel p1 = aroundPixels[i];
+                                    Pixel p2 = aroundPixels[lasti];
+                                    PixelColor temp;
+                                    // 1-2
+                                    temp = p1.color;
+                                    p1.color = pixelColor;
+                                    if (isPixelStable(board, p2.x, p2.y)) {
+                                        // SUCCESS!
+                                        p1.color = temp;
+                                        success = true;
+                                    }
+                                    // 2-1
+                                    temp = p2.color;
+                                    p2.color = pixelColor;
+                                    if (isPixelStable(board, p1.x, p1.y)) {
+                                        // SUCCESS!
+                                        p2.color = temp;
+                                        success = true;
+                                    }
+                                }
+
+                                if (success) {
+                                    if (aroundPixels[lastColorPixeli].color == pixelColor) {
+                                        isMosaicSame[x] = true;
+                                        isMosaicDifferent[x] = false;
+                                    } else {
+                                        isMosaicSame[x] = false;
+                                        isMosaicDifferent[x] = true;
+                                    }
+                                }
+                            }
+
+
+                        } else {
+                            // BAD, no mosaic can be formed
+                            distance[x] = 3;
+                            isMosaicSame[x] = false;
+                            isMosaicDifferent[x] = false;
+                        }
+
+                    }
+                }
+
+                // Sort by height and place at a spot where a mosaic will form, or can be formed
+                int cx1, cy1;
+
+                // distance=1
+                cx1 = -1;
+                cy1 = -1;
+                for (int x1 = 0; x1 < columnsTopY.length; x1++) {
+                    int y1 = columnsTopY[x1];
+                    if (distance[x1] == 1 && y1 > cy1) {
+                        cx1 = x1;
+                        cy1 = y1;
+                    }
+                }
+
+                if (cx1 == -1) {
+                    // distance=2
+                    for (int x1 = 0; x1 < columnsTopY.length; x1++) {
+                        int y1 = columnsTopY[x1];
+                        if (distance[x1] == 2 && y1 > cy1) {
+                            cx1 = x1;
+                            cy1 = y1;
+                        }
+                    }
+
+                    if (cx1 == -1) {
+                        // No good positions, give up
+                        // Just go for height, pass on to white algorithm
+                        heightOverride = true;
+                    } else {
+                        // TODO: Return mosaic options
+                        pixel.x = cx1;
+                        pixel.y = cy1;
+                    }
+                } else {
+                    // TODO: Return mosaic options
+                    pixel.x = cx1;
+                    pixel.y = cy1;
+                }
             }
         }
 
-        if (pixelColor == PixelColor.WHITE || useHeightOverride) {
+        if (pixelColor == PixelColor.WHITE || heightOverride) {
             // 3a: If white pixel: Go for height
             int cx, cy;
             cx = -1;
             cy = -2;
             for (int x = 0; x < columnsTopY.length; x++) {
-                if (columnsTopY[x] > cy) {
+                int y = columnsTopY[x];
+                System.out.println(x + "," + y);
+                if (y > cy) {
                     cx = x;
-                    cy = columnsTopY[x];
+                    cy = y;
                 }
             }
 
@@ -239,6 +473,11 @@ public class BestPixelPlacement {
     }
 
     public static void main(String[] args) {
+        /*
+        My vision: press x, y, a, b depending on color of loaded pixel
+
+         */
+
         Board board = new Board(7, 11);
 
         // set pixels
@@ -266,10 +505,12 @@ public class BestPixelPlacement {
 
 
         // Print board
-        System.out.println(board);
+//        System.out.println(board);
 
 
         Pixel pixel = calculate(board, PixelColor.GREEN);
+        board.board[pixel.y][pixel.x].color = PixelColor.X_TEST;
         System.out.println(pixel);
+        System.out.println(board);
     }
 }
