@@ -454,7 +454,7 @@ public class BestPixelPlacement {
             cy = -2;
             for (int x = 0; x < columnsTopY.length; x++) {
                 int y = columnsTopY[x];
-                System.out.println(x + "," + y);
+//                System.out.println(x + "," + y);
                 if (y > cy) {
                     cx = x;
                     cy = y;
